@@ -92,7 +92,7 @@ function moveToObj(moveObj, slotObj, offset, rotOffset)
             function()  
                 moveObj.use_hands = true
             end,
-            0.5)
+            0.6)
         end
         
         moveObj.setRotation({
@@ -315,13 +315,13 @@ function resetAudience()
     
     -- Return the Pick Up Marker to the center. Add a short delay to unlock it since the object gains physics before the deck would finish reforming.
     for _, obj in pairs(getObjectsWithTag("PickUpMarker")) do
-        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=4,z=0}, {x=0,y=0,z=0})
+        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=3.6,z=0}, {x=0,y=0,z=0})
         obj.locked = true
         Wait.time(
             function()
                 obj.locked = false
             end,
-            1.0)
+            2.7)
         break
     end
 
@@ -340,25 +340,17 @@ function resetAudience()
                 end
             end
         end,
-        1.8)
+        3.6)
 end
 
 function resetDeck(cardTag, excludeTag, moveSlot, offset, rotOffset)
-    local verticalOffsetIndex = 0 
-    local verticalOffsetDistance = 0.1
+    local verticalOffsetIndex = 0
+    
     -- Find each card and move it to the correct location
     for _, obj in ipairs(getObjects()) do
         if obj.type == "Card" and obj.hasTag(cardTag) then
             if excludeTag == nil or obj.hasTag(excludeTag) == false then
-                moveToObjNote(
-                    obj,
-                    moveSlot,
-                    {
-                        x = offset.x,
-                        y = offset.y + (verticalOffsetDistance * verticalOffsetIndex),
-                        z = offset.z
-                        },
-                    rotOffset)
+                cardResetByIndex(obj, moveSlot, offset, rotOffset, verticalOffsetIndex)
                 verticalOffsetIndex = verticalOffsetIndex + 1
             end
             
@@ -377,16 +369,10 @@ function resetDeck(cardTag, excludeTag, moveSlot, offset, rotOffset)
                     local cardObj = obj.remainder
                     if cardObj == nil then
                         cardObj = obj.takeObject({guid=card.guid})
+                        cardObj.locked = true
                     end
-                    moveToObjNote(
-                        cardObj,
-                        moveSlot,
-                        {
-                            x = offset.x,
-                            y = offset.y + (verticalOffsetDistance * verticalOffsetIndex),
-                            z = offset.z
-                            },
-                        rotOffset)
+                    
+                    cardResetByIndex(cardObj, moveSlot, offset, rotOffset, verticalOffsetIndex)
                     verticalOffsetIndex = verticalOffsetIndex + 1
                 end
             end
@@ -394,6 +380,32 @@ function resetDeck(cardTag, excludeTag, moveSlot, offset, rotOffset)
     end
 end
 
+function cardResetByIndex(cardObj, moveSlot, offset, rotOffset, dealtIndex)
+    local verticalOffsetDistance = 0.1 * dealtIndex
+    local verticalOffsetTime = 0.04 * dealtIndex
+    Wait.time(
+        function()  
+            cardObj.locked = true
+            moveToObjNote(
+                cardObj,
+                moveSlot,
+                {
+                    x = offset.x,
+                    y = offset.y + verticalOffsetDistance,
+                    z = offset.z
+                    },
+                rotOffset)
+        end,
+        (0 + verticalOffsetTime))
+        
+    Wait.time(
+        function()  
+            cardObj.locked = false
+        end,
+        (1.5 + verticalOffsetTime))
+        
+    return dealtIndex + 1
+end
 
 --  CHARACTER RETURN FUNCTIONS
 -- ============================
@@ -475,7 +487,7 @@ end
 -- [→onLoad()]: Globally resets cards to be used in hand zones, just in case a rewind state was really badly timed.
 function resetCardsUseHands()
     for _, obj in pairs(getObjectsWithAnyTags({"PlayingCard", "CharacterCard", "Audience"})) do
-        if obj.type == "Card" or obj.type == "Deck" then
+        if obj.type == "Card" then
             obj.use_hands = true
         end
     end
