@@ -80,20 +80,21 @@ function getCardsByTagsGlobal(tagList)
 end
 
 -- Moves one object to another object's position.
-function moveToObj(moveObj, slotObj, offset, rotOffset)
+function moveToObj(moveObj, slotObj, offset, rotOffset, lockedTime)
     destinationSlotObj = slotObj
 
     if moveObj and destinationSlotObj then
-        if moveObj.use_hands then
-            moveObj.use_hands = false
-            
-            -- We *very* briefly disable the ability for the card to be put into your hand to avoid issues of collision with hand zones.
+        moveObj.use_hands = false
+        moveObj.locked = true
+        -- We *very* briefly disable the ability for the card to be put into your hand to avoid issues of collision with hand zones.
             Wait.time(
             function()  
-                moveObj.use_hands = true
+                if moveObj.type == "Card" then
+                    moveObj.use_hands = true
+                end
+                moveObj.locked = false
             end,
-            0.6)
-        end
+            lockedTime or 0.6)
         
         moveObj.setRotation({
             x = destinationSlotObj.getRotation().x + (rotOffset and rotOffset.x or 0),
@@ -108,7 +109,7 @@ function moveToObj(moveObj, slotObj, offset, rotOffset)
     end
 end
 -- GM Notes variant
-function moveToObjNote(moveObj, slotName, offset, rotOffset)
+function moveToObjNote(moveObj, slotName, offset, rotOffset, lockedTime)
     destinationSlotObj = nil
     for _, obj in ipairs(getObjects()) do
         if obj.getGMNotes() == slotName then
@@ -116,7 +117,7 @@ function moveToObjNote(moveObj, slotName, offset, rotOffset)
         end
     end
 
-    moveToObj(moveObj, destinationSlotObj, offset, rotOffset)
+    moveToObj(moveObj, destinationSlotObj, offset, rotOffset, lockedTime)
 end
 
 -- [→onLoad()]: Shuffles the Audience and Song decks when the module is loaded, but
@@ -315,13 +316,7 @@ function resetAudience()
     
     -- Return the Pick Up Marker to the center. Add a short delay to unlock it since the object gains physics before the deck would finish reforming.
     for _, obj in pairs(getObjectsWithTag("PickUpMarker")) do
-        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=3.6,z=0}, {x=0,y=0,z=0})
-        obj.locked = true
-        Wait.time(
-            function()
-                obj.locked = false
-            end,
-            2.7)
+        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=3.6,z=0}, {x=0,y=0,z=0}, 2.7)
         break
     end
 
@@ -394,15 +389,10 @@ function cardResetByIndex(cardObj, moveSlot, offset, rotOffset, dealtIndex)
                     y = offset.y + verticalOffsetDistance,
                     z = offset.z
                     },
-                rotOffset)
+                rotOffset,
+                1.5)
         end,
         (0 + verticalOffsetTime))
-        
-    Wait.time(
-        function()  
-            cardObj.locked = false
-        end,
-        (1.5 + verticalOffsetTime))
         
     return dealtIndex + 1
 end
