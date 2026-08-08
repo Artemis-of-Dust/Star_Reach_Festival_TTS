@@ -316,7 +316,7 @@ function resetAudience()
     
     -- Return the Pick Up Marker to the center. Add a short delay to unlock it since the object gains physics before the deck would finish reforming.
     for _, obj in pairs(getObjectsWithTag("PickUpMarker")) do
-        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=3.6,z=0}, {x=0,y=0,z=0}, 2.7)
+        moveToObjNote(obj, "DrawPile_Audience",  {x=0,y=4,z=0}, {x=0,y=0,z=0}, 2.7)
         break
     end
 
@@ -511,7 +511,7 @@ function deckSorter(regObj, col_info)
                         if deckObj.remainder ~= nil then
                             cardObj = deckObj.remainder
                         else
-                            cardObj = deckObj.takeObject({position={x=0, y=0, z=0}, guid=card.guid})
+                            cardObj = deckObj.takeObject({position=basePosition, guid=card.guid})
                         end
                         
                         cardObj.setRotation(baseRotation)
